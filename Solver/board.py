@@ -1,82 +1,231 @@
 from cell import Cell
-
-
+from row import Row
+from column import Column
+from number import Number
 # FILE FORMAT: size of row / size of column
 # size of row * line with numbers /  size of col * line with numbers
 class Board:
     def __init__(self,filename):
         self.numberOfRows = 0
         self.numberOfColumns = 0
-        self.cellBoardArr = []
 
-        # key is number for line -1 (first line = 0)
-        # value is array with numbers
-        # self.rowNumArray = { } # dictionary
-        # self.colNumArray = { } # dictionary
-
-
-
-        self.rowNumArray = []
-        self.colNumArray = []
-
-        # Lower them only when set x or complete full black number
-        self.rowLeft = [] # number of cells that is still not set
-        self.colLeft = [] # number of cells that is still not set
-
-
-
+        self.rowsArray = [] # array with Row objects
+        self.columnsArray = [] # array with Column objects
 
         file = open(filename,"r")
-        line = file.readline()
+        line = file.readline() # first line with row and col number
         parts = line.split()
         self.numberOfRows = int(parts[0])
         self.numberOfColumns = int(parts[1])
-        # adds all needed cell objects in 2D array
+
+        # adds needed cells to each row object and also fixing row numbers
         for i in range(self.numberOfRows):
-            cellRow = []
+            row = Row(self.numberOfColumns, i) # because row from left to right
             for j in range(self.numberOfColumns):
-                cellRow.append(Cell()) # adds cell to row
-            self.cellBoardArr.append(cellRow) # adds row with cells  to 2D array
+                row.cellsArr.append(Cell()) # adds cell to row
+            self.rowsArray.append(row)
+            parts = file.readline().split() # array
+            # makes array with number objects and sends it to array in Row object
+            numArr = []
+            for num in parts:
+                numArr.append(Number(num))
+            row.numbersArr = numArr
 
 
-        # adds all needed row numbers in array
-        for i in range(self.numberOfRows): # i from 0 to numberOfRows
-            line = file.readline()
-            parts = line.split()
-            self.rowNumArray.append(parts)
-            self.rowLeft.append(self.numberOfRows)
-            # self.rowNumArray[i] = parts
-
-        # adds all needed column numbers in array
+        # adds needed cells to each column object and also fixing col numbers
         for i in range(self.numberOfColumns):
-            line = file.readline()
-            parts = line.split()
-            self.colNumArray.append(parts)
-            self.colLeft.append(self.numberOfColumns)
-            # self.colNumArray[i] = parts
-
+            column = Column(self.numberOfRows, i) # because col from up to down
+            for j in range(self.numberOfRows):
+                column.cellsArr.append(self.rowsArray[j].cellsArr[i])
+            self.columnsArray.append(column)
+            parts = file.readline().split() # array
+            # makes array with number objects and sends it to array in Row object
+            numArr = []
+            for num in parts:
+                numArr.append(Number(num))
+            column.numbersArr = numArr
 
         file.close()
 
 
-    # check if there is 0
+    # check if there is 0, runs once at start (may delete it later or merge with smth else)
     def throughRowColumnZero(self):
-        for i in range(self.numberOfRows):
-            # for rowNum in self.rowNumArray[i]:
-            # if self.rowNumArray[i][0] == 0: # if there is no black cells in this row
-            if int(self.rowNumArray[i][0]) == 0: # if there is no black cells in this row
-                self.rowLeft[i] -= 1
-                for cell in self.cellBoardArr[i]:
-                    cell.setx()
-                    self.rowLeft[i] -= 1
+        for row in self.rowsArray:
+            if int(row.numbersArr[0]) == 0:
+                for col in self.columnsArray:
+                    col.cellsArr[row.ID].setx() # put needed cell as 'x'
+                    col.numLeft -= 1
+                row.numLeft = 0 # because whole row is 0
 
-        for i in range(self.numberOfColumns):
-            # for rowNum in self.colNumArray[i]:
-            # if self.colNumArray[i][0] == 0: # if there is no black cells in this row
-            if int(self.colNumArray[i][0]) == 0: # if there is no black cells in this row
-                for row in self.cellBoardArr:
-                    row[i].setx()
-                    self.colLeft[i] -= 1
+        for col in self.columnsArray:
+            if int(col.numbersArr[0]) == 0:
+                for row in self.rowsArray:
+                    if not row.cellsArr[col.ID].isSet(): # if stil not set
+                        row.cellsArr[col.ID].setx()
+                        row.numLeft -= 1
+                    row.numLeft = 0 # because whole column is 0
+
+
+
+
+    # !!!!!!!! PROBLEM here is that i don't care about black cells from before
+    # may need to fix it !!!!!!!!!!!!!!
+
+    # First attempt for basic solving algorithm for each row and column
+    # def basicSolution(self):
+        # for row in self.rowsArray:
+        #     if not row.ID == 9:
+        #         continue
+        #     # key is index(position); (position from 0 to lengthOfRow - 1)
+        #     # value is number; because there can be same numbers so we cant use number as key
+        #     # but we know that index can't be the same in our situation
+        #     fromLeft = {}
+        #     index = 0 # index in number array
+        #     wNum = row.numbersArr[index] # number we checking right now (number is string)
+        #     numCopy = int(wNum) # will change it while go through row
+        #     if numCopy == 0: # if row have only number 0. But i already checked it before.
+        #         continue  # goes to next row
+        #     for i in range(self.numberOfColumns): # from left to right
+        #         if numCopy == 0: # goes to next number if it can
+        #             index += 1
+        #             if len(row.numbersArr) < index+1: # if there is no more numbers
+        #                 break # go out from for loop
+        #
+        #             wNum = row.numbersArr[index] # goes to next number
+        #             numCopy = int(wNum)
+        #         elif row.cellsArr[i].isX():
+        #             # resets the number we working with
+        #             numCopy = int(wNum)
+        #         else: # if black or white cell
+        #             numCopy -= 1
+        #             if numCopy == 0: # if we found enough not used cells in row for number of black cells
+        #                 # put found position for number in row
+        #                 startPos = i - int(wNum) + 1
+        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
+        #                     fromLeft[startPos+k] = int(wNum)
+        #
+        #
+        #     fromRight = {} # Library
+        #     index = len(row.numbersArr)-1 # start at last index in number array
+        #     wNum = row.numbersArr[index] # number we checking right now (number is string)
+        #     numCopy = int(wNum) # will change it while go through row
+        #     for i in range(self.numberOfColumns-1, -1, -1): # from right to left
+        #         if numCopy == 0: # goes to next number if it can
+        #             index -= 1
+        #             if index == -1: # if there is no more numbers
+        #                 break # go out from for loop
+        #
+        #             wNum = row.numbersArr[index] # goes to next number
+        #             numCopy = int(wNum)
+        #         elif row.cellsArr[i].isX():
+        #             # resets the number we working with
+        #             numCopy = int(wNum)
+        #         else: # if black or white cell
+        #             numCopy -= 1
+        #             if numCopy == 0: # if we found enough not used cells in row for number of black cells
+        #                 # put found position for number in row
+        #                 startPos = i
+        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
+        #                     fromRight[startPos+k] = int(wNum)
+        #
+        #
+        #
+        #     # compare two arrays and check if black from both sides is for the same number
+        #     # so make it "black"
+        #     for i in range(self.numberOfColumns): #index
+        #         if i in fromLeft: # if index (key) in fromLeft
+        #             if i in fromRight:  # if same index (key) in fromRight
+        #                 # now we need to check if number is the same or else do nothing
+        #                 # (because same number must be black for left and right side)
+        #                 print(i)
+        #                 if fromLeft[i] == fromRight[i]:
+        #                     row.cellsArr[i].setblack()
+        #
+        #
+
+
+
+        # for column in self.columnsArray:
+        #     # key is index(position); (position from 0 to lengthOfRow - 1)
+        #     # value is number; because there can be same numbers so we cant use number as key
+        #     # but we know that index can't be the same in our situation
+        #     fromTop = {}
+        #     index = 0 # index in number array
+        #     wNum = column.numbersArr[index] # number we checking right now (number is string)
+        #     numCopy = int(wNum) # will change it while go through column
+        #     if numCopy == 0: # if column have only number 0. But i already checked it before.
+        #         continue  # goes to next column
+        #
+        #     for i in range(self.numberOfRows): # from top to bottom
+        #         if numCopy == 0: # goes to next number if it can
+        #             index += 1
+        #             if len(column.numbersArr) < index+1: # if there is no more numbers
+        #                 break # go out from for loop
+        #
+        #             wNum = column.numbersArr[index] # goes to next number
+        #             numCopy = int(wNum)
+        #         elif column.cellsArr[i].isX():
+        #             # resets the number we working with
+        #             numCopy = int(wNum)
+        #         else: # if black or white cell
+        #             numCopy -= 1
+        #             if numCopy == 0: # if we found enough not used cells in column for number of black cells
+        #                 # put found position for number in column
+        #
+        #                 startPos = i - int(wNum) + 1
+        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
+        #                     fromTop[startPos+k] = int(wNum)
+        #
+        #
+        #
+        #     fromBottom = {} # Library
+        #     index = len(column.numbersArr)-1 # start at last index in number array
+        #     wNum = column.numbersArr[index] # number we checking right now (number is string)
+        #     numCopy = int(wNum) # will change it while go through column
+        #     for i in range(self.numberOfColumns-1, -1, -1): # from bottom to top
+        #         if numCopy == 0: # goes to next number if it can
+        #             index -= 1
+        #             if index == -1: # if there is no more numbers
+        #                 break # go out from for loop
+        #
+        #             wNum = column.numbersArr[index] # goes to next number
+        #             numCopy = int(wNum)
+        #         elif column.cellsArr[i].isX():
+        #             # resets the number we working with
+        #             numCopy = int(wNum)
+        #         else: # if black or white cell
+        #             numCopy -= 1
+        #             if numCopy == 0: # if we found enough not used cells in column for number of black cells
+        #                 # put found position for number in column
+        #                 startPos = i
+        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
+        #                     fromBottom[startPos+k] = int(wNum)
+        #
+        #
+        #
+        #     # compare two arrays and check if black from both sides is for the same number
+        #     # so make it "black"
+        #     for i in range(self.numberOfColumns): #index
+        #         if i in fromTop: # if index (key) in fromTop
+        #             if i in fromBottom:  # if same index (key) in fromBottom
+        #                 # now we need to check if number is the same or else do nothing
+        #                 # (because same number must be black for top and bottom side)
+        #                 if fromTop[i] == fromBottom[i]:
+        #                     column.cellsArr[i].setblack()
+        #
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     # if there is spaces where not enough space for any number in array
@@ -87,105 +236,91 @@ class Board:
 
 
 
-    # check if col or row have only one number
-    def throughRowColumnOneNumber(self):
-        for i in range(self.numberOfRows):
-            if len(self.rowNumArray[i]) == 1:  # if only one number
-                # number of spaces between each side the rest is black on the middle
-                eachSide = self.rowLeft[i] - int(self.rowNumArray[i][0])
-                if eachSide == 0: # if all free cells is black
-                    for cell in self.cellBoardArr[i]:
-                        if cell.isSet() == False: # for all x set
-                            cell.setblack()
-                            self.rowLeft[i] -= 1
-                elif self.rowLeft[i] - 2*eachSide > 0: # if there is new black spaces we can set
-                    #probles here is that it is possible to have something like:
-                    # 5 |x| |x|x|x| | | | | |x|x|
-                    # and algorithm will think that ther first empty position is
-                    # part of the "line", in other words 6, so to prevent it:
-                    num = 0
-                    start = 0 # to know where the last x's ends
-                    for k in range(len(self.cellBoardArr[i])):
-                        if self.cellBoardArr[i][k].isX() == True:
-                            if num > 0: # if we found the situation that i mentioned before
-                                # we will set previous not needed spaces to X
-                                while num != 0:
-                                    self.cellBoardArr[i][k-num].setx()
-                                    self.rowLeft[i] -= 1
-                                    num -= 1
-                        else:
-                            if num == 0: # change start position if needed
-                                start = k
-                            num += 1
-
-                    # adds needed ammount of black cell
-                    nBlacksToPaint = self.rowLeft[i] - 2*eachSide
-                    for k in range(start+eachSide, start+eachSide+nBlacksToPaint):
-                        self.cellBoardArr[i][k].setblack()
 
 
-
-
-
-
-        for i in range(self.numberOfColumns):
-            if len(self.colNumArray[i]) == 1:  # if only one number
-                # number of spaces between each side the rest is black on the middle
-                eachSide = self.colLeft[i] - int(self.colNumArray[i][0])
-                if eachSide == 0: # if all free cells is black
-                    for cell in self.cellBoardArr[i]:
-                        if cell.isSet() == False: # for all x set
-                            cell.setblack()
-                            self.rowLeft[i] -= 1
-                elif self.rowLeft[i] - 2*eachSide > 0: # if there is new black spaces we can set
-                    #probles here is that it is possible to have something like:
-                    # 5 |x| |x|x|x| | | | | |x|x|
-                    # and algorithm will think that ther first empty position is
-                    # part of the "line", in other words 6, so to prevent it:
-                    num = 0
-                    start = 0 # to know where the last x's ends
-                    for k in range(len(self.cellBoardArr[i])):
-                        if self.cellBoardArr[i][k].isX() == True:
-                            if num > 0: # if we found the situation that i mentioned before
-                                # we will set previous not needed spaces to X
-                                while num != 0:
-                                    self.cellBoardArr[i][k-num].setx()
-                                    self.rowLeft[i] -= 1
-                                    num -= 1
-                        else:
-                            if num == 0: # change start position if needed
-                                start = k
-                            num += 1
-
-                    # adds needed ammount of black cell
-                    nBlacksToPaint = self.rowLeft[i] - 2*eachSide
-                    for k in range(start+eachSide, start+eachSide+nBlacksToPaint):
-                        self.cellBoardArr[i][k].setblack()
-
+    # # check if col or row have only one number
+    # def throughRowColumnOneNumber(self):
+    #     for i in range(self.numberOfRows):
+    #         if len(self.rowNumArray[i]) == 1:  # if only one number
+    #             # number of spaces between each side the rest is black on the middle
+    #             eachSide = self.rowLeft[i] - int(self.rowNumArray[i][0])
+    #             if eachSide == 0: # if all free cells is black
+    #                 for cell in self.cellBoardArr[i]:
+    #                     if cell.isSet() == False: # for all x set
+    #                         cell.setblack()
+    #                         self.rowLeft[i] -= 1
+    #             elif self.rowLeft[i] - 2*eachSide > 0: # if there is new black spaces we can set
+    #                 #probles here is that it is possible to have something like:
+    #                 # 5 |x| |x|x|x| | | | | |x|x|
+    #                 # and algorithm will think that ther first empty position is
+    #                 # part of the "line", in other words 6, so to prevent it:
+    #                 num = 0
+    #                 start = 0 # to know where the last x's ends
+    #                 for k in range(len(self.cellBoardArr[i])):
+    #                     if self.cellBoardArr[i][k].isX() == True:
+    #                         if num > 0: # if we found the situation that i mentioned before
+    #                             # we will set previous not needed spaces to X
+    #                             while num != 0:
+    #                                 self.cellBoardArr[i][k-num].setx()
+    #                                 self.rowLeft[i] -= 1
+    #                                 num -= 1
+    #                     else:
+    #                         if num == 0: # change start position if needed
+    #                             start = k
+    #                         num += 1
+    #
+    #                 # adds needed ammount of black cell
+    #                 nBlacksToPaint = self.rowLeft[i] - 2*eachSide
+    #                 for k in range(start+eachSide, start+eachSide+nBlacksToPaint):
+    #                     self.cellBoardArr[i][k].setblack()
+    #
+    #
+    #
+    #
+    #
+    #
+    #     for i in range(self.numberOfColumns):
+    #         if len(self.colNumArray[i]) == 1:  # if only one number
+    #             # number of spaces between each side the rest is black on the middle
+    #             eachSide = self.colLeft[i] - int(self.colNumArray[i][0])
+    #             if eachSide == 0: # if all free cells is black
+    #                 for cell in self.cellBoardArr[i]:
+    #                     if cell.isSet() == False: # for all x set
+    #                         cell.setblack()
+    #                         self.rowLeft[i] -= 1
+    #             elif self.rowLeft[i] - 2*eachSide > 0: # if there is new black spaces we can set
+    #                 #probles here is that it is possible to have something like:
+    #                 # 5 |x| |x|x|x| | | | | |x|x|
+    #                 # and algorithm will think that ther first empty position is
+    #                 # part of the "line", in other words 6, so to prevent it:
+    #                 num = 0
+    #                 start = 0 # to know where the last x's ends
+    #                 for k in range(len(self.cellBoardArr[i])):
+    #                     if self.cellBoardArr[i][k].isX() == True:
+    #                         if num > 0: # if we found the situation that i mentioned before
+    #                             # we will set previous not needed spaces to X
+    #                             while num != 0:
+    #                                 self.cellBoardArr[i][k-num].setx()
+    #                                 self.rowLeft[i] -= 1
+    #                                 num -= 1
+    #                     else:
+    #                         if num == 0: # change start position if needed
+    #                             start = k
+    #                         num += 1
+    #
+    #                 # adds needed ammount of black cell
+    #                 nBlacksToPaint = self.rowLeft[i] - 2*eachSide
+    #                 for k in range(start+eachSide, start+eachSide+nBlacksToPaint):
+    #                     self.cellBoardArr[i][k].setblack()
+    #
+    #
+    #
 
 
 
 
     # writes the board in terminal
     def paint(self):
-        for row in self.cellBoardArr:
-            for cell in row:
-                print(cell, end = " ")
-            print()
-
-        #
-        # # writes the board in terminal
-        # def paint(self):
-        #     for i in range(self.numberOfColumns+1):
-        #         if i == 0:
-        #             print(" ", end = " ")
-        #         else:
-        #             print(i, end = " ")
-        #     print()
-        #     rowNumber = 1
-        #     for row in self.cellBoardArr:
-        #         print(rowNumber, end = "  ")
-        #         rowNumber += 1
-        #         for cell in row:
-        #             print(cell, end = " ")
-        #         print()
+        print()
+        for row in self.rowsArray:
+            row.printOut()
