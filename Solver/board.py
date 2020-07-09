@@ -28,7 +28,7 @@ class Board:
             # makes array with number objects and sends it to array in Row object
             numArr = []
             for num in parts:
-                numArr.append(Number(num))
+                numArr.append(Number(int(num)))
             row.numbersArr = numArr
 
 
@@ -42,7 +42,7 @@ class Board:
             # makes array with number objects and sends it to array in Row object
             numArr = []
             for num in parts:
-                numArr.append(Number(num))
+                numArr.append(Number(int(num)))
             column.numbersArr = numArr
 
         file.close()
@@ -51,14 +51,14 @@ class Board:
     # check if there is 0, runs once at start (may delete it later or merge with smth else)
     def throughRowColumnZero(self):
         for row in self.rowsArray:
-            if int(row.numbersArr[0]) == 0:
+            if row.numbersArr[0].ID == 0:
                 for col in self.columnsArray:
                     col.cellsArr[row.ID].setx() # put needed cell as 'x'
                     col.numLeft -= 1
                 row.numLeft = 0 # because whole row is 0
 
         for col in self.columnsArray:
-            if int(col.numbersArr[0]) == 0:
+            if col.numbersArr[0].ID == 0:
                 for row in self.rowsArray:
                     if not row.cellsArr[col.ID].isSet(): # if stil not set
                         row.cellsArr[col.ID].setx()
@@ -72,155 +72,148 @@ class Board:
     # may need to fix it !!!!!!!!!!!!!!
 
     # First attempt for basic solving algorithm for each row and column
-    # def basicSolution(self):
-        # for row in self.rowsArray:
-        #     if not row.ID == 9:
-        #         continue
-        #     # key is index(position); (position from 0 to lengthOfRow - 1)
-        #     # value is number; because there can be same numbers so we cant use number as key
-        #     # but we know that index can't be the same in our situation
-        #     fromLeft = {}
-        #     index = 0 # index in number array
-        #     wNum = row.numbersArr[index] # number we checking right now (number is string)
-        #     numCopy = int(wNum) # will change it while go through row
-        #     if numCopy == 0: # if row have only number 0. But i already checked it before.
-        #         continue  # goes to next row
-        #     for i in range(self.numberOfColumns): # from left to right
-        #         if numCopy == 0: # goes to next number if it can
-        #             index += 1
-        #             if len(row.numbersArr) < index+1: # if there is no more numbers
-        #                 break # go out from for loop
-        #
-        #             wNum = row.numbersArr[index] # goes to next number
-        #             numCopy = int(wNum)
-        #         elif row.cellsArr[i].isX():
-        #             # resets the number we working with
-        #             numCopy = int(wNum)
-        #         else: # if black or white cell
-        #             numCopy -= 1
-        #             if numCopy == 0: # if we found enough not used cells in row for number of black cells
-        #                 # put found position for number in row
-        #                 startPos = i - int(wNum) + 1
-        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
-        #                     fromLeft[startPos+k] = int(wNum)
-        #
-        #
-        #     fromRight = {} # Library
-        #     index = len(row.numbersArr)-1 # start at last index in number array
-        #     wNum = row.numbersArr[index] # number we checking right now (number is string)
-        #     numCopy = int(wNum) # will change it while go through row
-        #     for i in range(self.numberOfColumns-1, -1, -1): # from right to left
-        #         if numCopy == 0: # goes to next number if it can
-        #             index -= 1
-        #             if index == -1: # if there is no more numbers
-        #                 break # go out from for loop
-        #
-        #             wNum = row.numbersArr[index] # goes to next number
-        #             numCopy = int(wNum)
-        #         elif row.cellsArr[i].isX():
-        #             # resets the number we working with
-        #             numCopy = int(wNum)
-        #         else: # if black or white cell
-        #             numCopy -= 1
-        #             if numCopy == 0: # if we found enough not used cells in row for number of black cells
-        #                 # put found position for number in row
-        #                 startPos = i
-        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
-        #                     fromRight[startPos+k] = int(wNum)
-        #
-        #
-        #
-        #     # compare two arrays and check if black from both sides is for the same number
-        #     # so make it "black"
-        #     for i in range(self.numberOfColumns): #index
-        #         if i in fromLeft: # if index (key) in fromLeft
-        #             if i in fromRight:  # if same index (key) in fromRight
-        #                 # now we need to check if number is the same or else do nothing
-        #                 # (because same number must be black for left and right side)
-        #                 print(i)
-        #                 if fromLeft[i] == fromRight[i]:
-        #                     row.cellsArr[i].setblack()
-        #
-        #
+    def basicSolution(self):
+        for row in self.rowsArray:
+            # key is index(position); (position from 0 to lengthOfRow - 1)
+            # value is number; because there can be same numbers so we cant use number as key
+            # but we know that index can't be the same in our situation
+            fromLeft = {}
+            index = 0 # index in number array
+            wNum = row.numbersArr[index] # number object we checking right now
+            numCopy = wNum.ID # will change it while go through row
+            if numCopy == 0: # if row have only number 0. But i already checked it before.
+                continue  # goes to next row
+
+            for i in range(self.numberOfColumns): # from left to right
+                if numCopy == 0: # goes to next number if it can
+                    index += 1
+                    if len(row.numbersArr) < index+1: # if there is no more numbers
+                        break # go out from for loop
+
+                    wNum = row.numbersArr[index] # goes to next number
+                    numCopy = wNum.ID
+                elif row.cellsArr[i].isX():
+                    # resets the number we working with
+                    numCopy = wNum.ID
+                else: # if black or white cell
+                    numCopy -= 1
+                    if numCopy == 0: # if we found enough not used cells in row for number of black cells
+                        # put found position for number in row
+                        startPos = i - wNum.ID + 1
+                        for k in range(wNum.ID): # adds all indexes that is black (value is number)
+                            fromLeft[startPos+k] = wNum
 
 
+            fromRight = {} # Library
+            index = len(row.numbersArr)-1 # start at last index in number array
+            wNum = row.numbersArr[index] # number object we checking right now
+            numCopy = wNum.ID # will change it while go through row
+            for i in range(self.numberOfColumns-1, -1, -1): # from right to left
+                if numCopy == 0: # goes to next number if it can
+                    index -= 1
+                    if index == -1: # if there is no more numbers
+                        break # go out from for loop
 
-        # for column in self.columnsArray:
-        #     # key is index(position); (position from 0 to lengthOfRow - 1)
-        #     # value is number; because there can be same numbers so we cant use number as key
-        #     # but we know that index can't be the same in our situation
-        #     fromTop = {}
-        #     index = 0 # index in number array
-        #     wNum = column.numbersArr[index] # number we checking right now (number is string)
-        #     numCopy = int(wNum) # will change it while go through column
-        #     if numCopy == 0: # if column have only number 0. But i already checked it before.
-        #         continue  # goes to next column
-        #
-        #     for i in range(self.numberOfRows): # from top to bottom
-        #         if numCopy == 0: # goes to next number if it can
-        #             index += 1
-        #             if len(column.numbersArr) < index+1: # if there is no more numbers
-        #                 break # go out from for loop
-        #
-        #             wNum = column.numbersArr[index] # goes to next number
-        #             numCopy = int(wNum)
-        #         elif column.cellsArr[i].isX():
-        #             # resets the number we working with
-        #             numCopy = int(wNum)
-        #         else: # if black or white cell
-        #             numCopy -= 1
-        #             if numCopy == 0: # if we found enough not used cells in column for number of black cells
-        #                 # put found position for number in column
-        #
-        #                 startPos = i - int(wNum) + 1
-        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
-        #                     fromTop[startPos+k] = int(wNum)
-        #
-        #
-        #
-        #     fromBottom = {} # Library
-        #     index = len(column.numbersArr)-1 # start at last index in number array
-        #     wNum = column.numbersArr[index] # number we checking right now (number is string)
-        #     numCopy = int(wNum) # will change it while go through column
-        #     for i in range(self.numberOfColumns-1, -1, -1): # from bottom to top
-        #         if numCopy == 0: # goes to next number if it can
-        #             index -= 1
-        #             if index == -1: # if there is no more numbers
-        #                 break # go out from for loop
-        #
-        #             wNum = column.numbersArr[index] # goes to next number
-        #             numCopy = int(wNum)
-        #         elif column.cellsArr[i].isX():
-        #             # resets the number we working with
-        #             numCopy = int(wNum)
-        #         else: # if black or white cell
-        #             numCopy -= 1
-        #             if numCopy == 0: # if we found enough not used cells in column for number of black cells
-        #                 # put found position for number in column
-        #                 startPos = i
-        #                 for k in range(int(wNum)): # adds all indexes that is black (value is number)
-        #                     fromBottom[startPos+k] = int(wNum)
-        #
-        #
-        #
-        #     # compare two arrays and check if black from both sides is for the same number
-        #     # so make it "black"
-        #     for i in range(self.numberOfColumns): #index
-        #         if i in fromTop: # if index (key) in fromTop
-        #             if i in fromBottom:  # if same index (key) in fromBottom
-        #                 # now we need to check if number is the same or else do nothing
-        #                 # (because same number must be black for top and bottom side)
-        #                 if fromTop[i] == fromBottom[i]:
-        #                     column.cellsArr[i].setblack()
-        #
+                    wNum = row.numbersArr[index] # goes to next number
+                    numCopy = wNum.ID
+                elif row.cellsArr[i].isX():
+                    # resets the number we working with
+                    numCopy = wNum.ID
+                else: # if black or white cell
+                    numCopy -= 1
+                    if numCopy == 0: # if we found enough not used cells in row for number of black cells
+                        # put found position for number in row
+                        startPos = i
+                        for k in range(wNum.ID): # adds all indexes that is black (value is number)
+                            fromRight[startPos+k] = wNum
+
+
+            # compare two arrays and check if black from both sides is for the same number
+            # so make it "black"
+            for i in range(self.numberOfColumns): #index
+                if i in fromLeft: # if index (key) in fromLeft
+                    if i in fromRight:  # if same index (key) in fromRight
+                        # now we need to check if number is the same or else do nothing
+                        # (because same number must be black for left and right side)
+                        if fromLeft[i] == fromRight[i]: # if both numbers is the same number object
+                            row.cellsArr[i].setblack()
 
 
 
 
 
+        for column in self.columnsArray:
+            # key is index(position); (position from 0 to lengthOfRow - 1)
+            # value is number; because there can be same numbers so we cant use number as key
+            # but we know that index can't be the same in our situation
+            fromTop = {}
+            index = 0 # index in number array
+            wNum = column.numbersArr[index] # number we checking right now
+            numCopy = wNum.ID # will change it while go through column
+            if numCopy == 0: # if column have only number 0. But i already checked it before.
+                continue  # goes to next column
+
+            for i in range(self.numberOfRows): # from top to bottom
+                if numCopy == 0: # goes to next number if it can
+                    index += 1
+                    if len(column.numbersArr) < index+1: # if there is no more numbers
+                        break # go out from for loop
+
+                    wNum = column.numbersArr[index] # goes to next number
+                    numCopy = wNum.ID
+                elif column.cellsArr[i].isX():
+                    # resets the number we working with
+                    numCopy = wNum.ID
+                else: # if black or white cell
+                    numCopy -= 1
+                    if numCopy == 0: # if we found enough not used cells in column for number of black cells
+                        # put found position for number in column
+
+                        startPos = i - wNum.ID + 1
+                        for k in range(wNum.ID): # adds all indexes that is black (value is number)
+                            fromTop[startPos+k] = wNum
 
 
 
+            fromBottom = {} # Library
+            index = len(column.numbersArr)-1 # start at last index in number array
+            wNum = column.numbersArr[index] # number we checking right now
+            numCopy = wNum.ID # will change it while go through column
+            for i in range(self.numberOfColumns-1, -1, -1): # from bottom to top
+                if numCopy == 0: # goes to next number if it can
+                    index -= 1
+                    if index == -1: # if there is no more numbers
+                        break # go out from for loop
+
+                    wNum = column.numbersArr[index] # goes to next number
+                    numCopy = wNum.ID
+                elif column.cellsArr[i].isX():
+                    # resets the number we working with
+                    numCopy = wNum.ID
+                else: # if black or white cell
+                    numCopy -= 1
+                    if numCopy == 0: # if we found enough not used cells in column for number of black cells
+                        # put found position for number in column
+                        startPos = i
+                        for k in range(wNum.ID): # adds all indexes that is black (value is number)
+                            fromBottom[startPos+k] = wNum
+
+
+
+            # compare two arrays and check if black from both sides is for the same number
+            # so make it "black"
+            for i in range(self.numberOfColumns): #index
+                if i in fromTop: # if index (key) in fromTop
+                    if i in fromBottom:  # if same index (key) in fromBottom
+                        # now we need to check if number is the same or else do nothing
+                        # (because same number must be black for top and bottom side)
+                        if fromTop[i] == fromBottom[i]:
+                            column.cellsArr[i].setblack()
+
+
+
+    # function that checks if any 
+    def checkIfNumberisFound(self):
 
 
 

@@ -9,6 +9,3 @@ class Number:
         self.found = True
         self.start = start
         self.end = end
-
-    def __repr__(self): # print function
-        return self.ID
