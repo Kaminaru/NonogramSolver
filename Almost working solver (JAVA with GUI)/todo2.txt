@@ -1,0 +1,17 @@
+check other parts of the code that changes X's
+
+
+
+3 4 1  |X|#|#|#|X| | |#| | | | | | | |
+
+number = 3
+staticNumber = 3
+
+
+
+
+
+
+
+
+
