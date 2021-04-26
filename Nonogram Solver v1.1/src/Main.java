@@ -1,12 +1,18 @@
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-public class Main {
+public class Main extends Application{
+    @Override
+    public void start(Stage stage) throws Exception{
+        stage.setTitle("Nonogram Solver");
+        stage.setWidth(500);
+        stage.setHeight(500);
+        stage.show();
+    }
+
     public static void main(String[] args) {
-        System.out.println("Hello");
+        launch();
     }
 }
 
