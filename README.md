@@ -5,4 +5,5 @@ Plans for future versions:
 * [ ] User input
 * [ ] GUI
 * [ ] Read txt file
+* [ ] Make sure that user input is at least fine
 * [ ] Threads (showing board while finding solution)
