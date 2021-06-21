@@ -1,0 +1,116 @@
+    // Problem with
+    private static String[][] board = new String[5][10]; // # - solved   ' ' - (empty) nothing
+    private static Integer[][] rows = {{6,2},{4,2},{3,2},{3,1},{2,1}};
+    private static Integer[][] columns = {{1},{1},{2,2},{5},{4},{3},{0},{0},{3,1},{4}};
+
+
+
+
+
+private static boolean checkRow(int i, int j){
+        int numberOfBlacks = 0; // number of black we need
+        for(int num : rows[i]){
+            numberOfBlacks = numberOfBlacks + num;
+        }
+        int blackOnRowCount = 0; // number of black we have
+        for(String symbol: board[i]){
+            if(symbol.equals("#")){
+                blackOnRowCount++;
+            }
+        }
+
+        if(numberOfBlacks < blackOnRowCount){
+            return false;
+        // Only checks when full row, may be slower but need less code
+        // (may add some extra checks later to make it faster)
+        }else if(numberOfBlacks == blackOnRowCount){ // we need to check if order is right
+            int blackBlockNum = 0; // number for the black block that I can look up in rows array
+            int countedNumber = 0;
+            boolean newBlock = false; // shows when we found new black block
+            for(String symbol: board[i]){
+                if(symbol.equals("#")){
+                    newBlock = true;
+                    countedNumber++;
+                    if(blackBlockNum >= rows[i].length){
+                        return false;
+                    }
+                    if(countedNumber > rows[i][blackBlockNum]){ // not enough black in the block
+                        return false;
+                    }
+                }else{
+                    if(newBlock){
+                        blackBlockNum ++;
+                        newBlock = false;
+                        countedNumber = 0;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+
+
+    private static boolean checkColumn(int i, int j){
+        int numberOfBlacks = 0; // number of black we need
+        for(int num : columns[j]){
+            numberOfBlacks = numberOfBlacks + num;
+        }
+
+        int blackOnColumnCount = 0; // number of black we have
+        for (String[] row : board) {    // go through rows at same column number
+            if(row[j].equals("#")){
+                blackOnColumnCount++;
+            }
+        }
+
+        if(numberOfBlacks < blackOnColumnCount){
+            return false;
+            // Only checks when full column, may be slower but need less code
+            // (may add some extra checks later to make it faster)
+        }else if(numberOfBlacks == blackOnColumnCount){ // we need to check if order is right
+            int blackBlockNum = 0; // number for the black block that I can look up in columns array
+            int countedNumber = 0;
+            boolean newBlock = false; // shows when we found new black block
+            for(String[] row : board){
+                if(row[j].equals("#")){
+                    newBlock = true;
+                    countedNumber++;
+                    if(blackBlockNum >= columns[j].length || countedNumber > columns[j][blackBlockNum]){ // not enough black in the block
+                        return false;
+                    }
+                }else{
+                    if(newBlock){
+                        blackBlockNum ++;
+                        newBlock = false;
+                        countedNumber = 0;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+            int numberOfBlacks = 0; // number of black we need
+            for(int num : rows[i]){
+                numberOfBlacks = numberOfBlacks + num;
+            }
+            int blackOnRowCount = 0; // number of black we have
+            for(String symbol: board[i]){
+                if(symbol.equals("#")){
+                    blackOnRowCount++;
+                }
+            }
+            System.out.println(numberOfBlacks + "YOLO" + blackOnRowCount);
+            if(numberOfBlacks < blackOnRowCount){
+                System.out.println("OK");
+                return false;
+            }else{
