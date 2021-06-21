@@ -1,10 +1,8 @@
-# NonogramSolver
-Nonogram Solver in Python
+# Nonogram Solver in Java
 
 Plans for future versions:
- - GUI
- - Threads (showing board while finding solution)
-
-
-Java solver:
-Almost working solver. GUI works nice. Solver able to solve some nonograms.
+* [x] Solves Nonogram 
+* [ ] User input
+* [ ] GUI
+* [ ] Read txt file
+* [ ] Threads (showing board while finding solution)
