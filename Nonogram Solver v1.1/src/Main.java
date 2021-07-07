@@ -1,5 +1,9 @@
 import javafx.application.Application;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -8,6 +12,8 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -25,46 +31,67 @@ public class Main extends Application{
     @Override
     public void start(Stage stage) throws Exception{
         stage.setTitle("Nonogram Solver");
-//        stage.setWidth(500);
-//        stage.setHeight(500);
+//        stage.setWidth(1000);
+//        stage.setHeight(1000);
+
+        GridPane mainGrid = new GridPane();
+        mainGrid.setAlignment(Pos.CENTER);
 
         Pane gridPaneMiddle = makeGridPaneMiddle();
         Pane gridPaneLeft = makeGridPaneLeft();
-        HBox hbox = new HBox(gridPaneLeft, gridPaneMiddle);
+        Pane gridPaneAbove = makeGridPaneAbove();
 
-        Scene scene = new Scene(hbox, 500, 500);
+        mainGrid.add(gridPaneMiddle, 1, 1);
+        mainGrid.add(gridPaneLeft, 0, 1);
+        mainGrid.add(gridPaneAbove, 1, 0);
+
+        Scene scene = new Scene(mainGrid, 800, 700);
         stage.setScene(scene);
         stage.show();
     }
 
     private Pane makeGridPaneLeft(){
         GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(10));
+        gridPane.setPadding(new Insets(5));
 
         for(int i = 0; i < NUM_ROWS; i++){
             Button plusButton = new Button("+");
             plusButton.setStyle("-fx-background-color: transparent;");
+            plusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
             plusButton.setOnAction(e->{
-                System.out.println("COOL beans");
+                addNewNumberBox(plusButton, gridPane,1);
             });
             plusButton.setPrefWidth(25);
             plusButton.setPrefHeight(25);
-            gridPane.add(plusButton, 0, i, 1, 1);
-
-
-            TextField textField = new TextField();
-            textField.setPrefWidth(30);
-            textField.setPrefHeight(30);
-            gridPane.add(textField, 1, i, 1, 1);
+            gridPane.add(plusButton, 0, i);
+            gridPane.add(createTextField(), 1, i);
         }
 
         return gridPane;
     }
 
+    private Pane makeGridPaneAbove(){
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(5));
+
+        for(int i = 0; i < NUM_COLS; i++){
+            Button plusButton = new Button("+");
+            plusButton.setStyle("-fx-background-color: transparent;");
+            plusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
+            plusButton.setOnAction(e->{
+                addNewNumberBox(plusButton, gridPane, 2);
+            });
+            plusButton.setPrefWidth(25);
+            plusButton.setPrefHeight(25);
+            gridPane.add(plusButton, i, 0);
+            gridPane.add(createTextField(), i, 1);
+        }
+        return gridPane;
+    }
 
     private Pane makeGridPaneMiddle(){
         GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(10));
+        gridPane.setPadding(new Insets(5));
 
         for(int i = 0; i < NUM_ROWS; i++) {
             for(int j = 0; j < NUM_COLS; j++){
@@ -84,6 +111,37 @@ public class Main extends Application{
         }
         return gridPane;
     }
+
+    private TextField createTextField(){
+        TextField textField = new TextField();
+        textField.setPrefWidth(30);
+        textField.setPrefHeight(30);
+        return textField;
+    }
+
+    private void addNewNumberBox(Button button, GridPane gridPane, int side){ // side: 1 left, 2 above
+        int index = Integer.parseInt(String.valueOf(button.getProperties().get("TYPE")));
+
+        ObservableList<Node> childrens = gridPane.getChildren();
+        int length = 0;
+        if(side == 1){
+            for(Node node : childrens){
+                if(gridPane.getRowIndex(node) == index){
+                    length++;
+                }
+            }
+            gridPane.add(createTextField(),length,index); // sets new box at the end from right side
+        }else if(side == 2){
+            for(Node node : childrens){
+                if(gridPane.getColumnIndex(node) == index){
+                    length++;
+                }
+            }
+            gridPane.add(createTextField(),index,length); // sets new box at the end from under
+        }
+    }
+
+
 
     private void leftButtonClick(Button button){
         if(button.getProperties().get("TYPE").equals("#")){
