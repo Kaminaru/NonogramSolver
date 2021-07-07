@@ -1,28 +1,122 @@
 import javafx.application.Application;
-import javafx.stage.Modality;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
-import java.awt.datatransfer.SystemFlavorMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main extends Application{
+    // precoded variables. I have to add args later
+    private static int NUM_ROWS =  0;
+    private static int NUM_COLS = 0;
+    private static String[][] board = null;
+    // private static Integer[][] rows = new ArrayList();
+    private static final Integer[][] rows = {{6,2},{4,2},{3,2},{3,1},{2,1},{1,4},{5},{3},{3,2},{5,1}};
+    private static final Integer[][] columns = {{1,1},{1,1},{2,2,1},{5,1},{4,2},{3,1,2},{2,1},{3},{3,5},{4,5}};
+
     @Override
     public void start(Stage stage) throws Exception{
         stage.setTitle("Nonogram Solver");
-        stage.setWidth(500);
-        stage.setHeight(500);
+//        stage.setWidth(500);
+//        stage.setHeight(500);
+
+        Pane gridPaneMiddle = makeGridPaneMiddle();
+        Pane gridPaneLeft = makeGridPaneLeft();
+        HBox hbox = new HBox(gridPaneLeft, gridPaneMiddle);
+
+        Scene scene = new Scene(hbox, 500, 500);
+        stage.setScene(scene);
         stage.show();
     }
 
-    // precoded variables. I have to add args later
-    private static String[][] board = new String[15][15]; // # - solved   ' ' - (empty) nothing
-    private static Integer[][] rows = {{5},{2,2},{4,1,2,2},{2,1,6},{4,7},{4,3,5},{2,1,10},
-                                       {1,1,1,1,3},{2,1,1,4},{4,9},{4,4},{1,3,1,5},{1,4,7},{2,5},{1,1,1,2}};
-    private static Integer[][] columns = {{2,2},{3,2},{4,3},{12},{3,2,5},{1,2,1,4},{1,2,2,1},{3,2,4,2},
-                                          {2,4,2,2},{2,1,3,3},{6,1,3},{5,2,4},{7,2,1},{8,2},{8,2}};
+    private Pane makeGridPaneLeft(){
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(10));
 
+        for(int i = 0; i < NUM_ROWS; i++){
+            Button plusButton = new Button("+");
+            plusButton.setStyle("-fx-background-color: transparent;");
+            plusButton.setOnAction(e->{
+                System.out.println("COOL beans");
+            });
+            plusButton.setPrefWidth(25);
+            plusButton.setPrefHeight(25);
+            gridPane.add(plusButton, 0, i, 1, 1);
+
+
+            TextField textField = new TextField();
+            textField.setPrefWidth(30);
+            textField.setPrefHeight(30);
+            gridPane.add(textField, 1, i, 1, 1);
+        }
+
+        return gridPane;
+    }
+
+
+    private Pane makeGridPaneMiddle(){
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(10));
+
+        for(int i = 0; i < NUM_ROWS; i++) {
+            for(int j = 0; j < NUM_COLS; j++){
+                Button button = new Button();
+                button.setOnMouseClicked(e->{
+                    if(e.getButton() == MouseButton.SECONDARY){ // right click
+                        rightButtonClick(button);
+                    }else{ // left click
+                        leftButtonClick(button);
+                    }
+                });
+                button.setPrefWidth(30);
+                button.setPrefHeight(30);
+                button.getProperties().put("TYPE"," "); // For empty button
+                gridPane.add(button, i, j, 1, 1);
+            }
+        }
+        return gridPane;
+    }
+
+    private void leftButtonClick(Button button){
+        if(button.getProperties().get("TYPE").equals("#")){
+            // reset button
+            button.setGraphic(null);
+            button.getProperties().put("TYPE"," "); //  For empty button
+        }else{
+            Image imageB = new Image("bSquare.png");
+            ImageView imageViewB = new ImageView(imageB);
+            imageViewB.setFitHeight(13);
+            imageViewB.setPreserveRatio(true);
+            button.setGraphic(imageViewB);
+            button.getProperties().put("TYPE","#"); //  For # button
+        }
+    }
+
+    private void rightButtonClick(Button button) {
+        if(button.getProperties().get("TYPE").equals("X")){
+            // reset button
+            button.setGraphic(null);
+            button.getProperties().put("TYPE"," "); //  For empty button
+        }else{
+            Image imageX = new Image("rX.png");
+            ImageView imageViewX = new ImageView(imageX);
+            imageViewX.setFitHeight(13);
+            imageViewX.setPreserveRatio(true);
+            button.setGraphic(imageViewX);
+            button.getProperties().put("TYPE","X"); //  For X button
+        }
+    }
 
     private static void setUpBoard(){
+        board = new String[NUM_ROWS][NUM_COLS]; // # - solved   ' ' - (empty) nothing
         for (String[] strings : board) {
             Arrays.fill(strings, " ");
         }
@@ -108,7 +202,6 @@ public class Main extends Application{
 
     private static boolean findSolution(int i, int j){
         if(i == board.length) return true; // at the last row
-
         // Finds next i and j
         int nextI = i; // index for row
         int nextJ = j; // index for column
@@ -132,10 +225,11 @@ public class Main extends Application{
 
 
     public static void main(String[] args) {
-        // launch();
-
         // This time I am trying recursion solution with backtracking
         // (It will be slower than old OOP version, but it will solve almost any nonogram by brute force)
+        NUM_ROWS = 10;
+        NUM_COLS = 10;
+
         setUpBoard();
         findSolution(0,0); // starts from upper left corner
         for (String[] rowArr : board) {
@@ -144,8 +238,11 @@ public class Main extends Application{
             }
             System.out.println("|");
         }
+
+        launch();
+
+
+
         System.exit(0);
     }
 }
-
-// maybe change # and " " to true and False
