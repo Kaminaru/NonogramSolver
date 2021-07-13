@@ -2,8 +2,9 @@
 
 Plans for future versions:
 * [x] Solves Nonogram 
-* [ ] User input
-* [ ] GUI
+* [X] User input
+* [X] User able to solve nonogram and check if solution is right
+* [X] GUI
 * [ ] Read txt file
-* [ ] Make sure that user input is at least fine
+* [X] Make sure that user input is at least fine
 * [ ] Threads (showing board while finding solution)

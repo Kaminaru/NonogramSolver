@@ -2,7 +2,6 @@ import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -11,22 +10,24 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Screen;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class Main extends Application{
-    // precoded variables. I have to add args later
     private static int NUM_ROWS =  0;
     private static int NUM_COLS = 0;
     private static String[][] board = null;
-    // private static Integer[][] rows = new ArrayList();
-    private static final Integer[][] rows = {{6,2},{4,2},{3,2},{3,1},{2,1},{1,4},{5},{3},{3,2},{5,1}};
-    private static final Integer[][] columns = {{1,1},{1,1},{2,2,1},{5,1},{4,2},{3,1,2},{2,1},{3},{3,5},{4,5}};
+    private static List<List<Integer>> rows = new ArrayList<List<Integer>>();
+    private static List<List<Integer>> columns = new ArrayList<List<Integer>>();
+    private static GridPane gridPaneMiddle = null;
+    private static GridPane gridPaneLeft = null;
+    private static GridPane gridPaneAbove = null;
+    private static Text errorTextField = null;
 
     @Override
     public void start(Stage stage) throws Exception{
@@ -37,62 +38,144 @@ public class Main extends Application{
         GridPane mainGrid = new GridPane();
         mainGrid.setAlignment(Pos.CENTER);
 
-        Pane gridPaneMiddle = makeGridPaneMiddle();
-        Pane gridPaneLeft = makeGridPaneLeft();
-        Pane gridPaneAbove = makeGridPaneAbove();
+        gridPaneMiddle = new GridPane();
+        gridPaneMiddle.setPadding(new Insets(5));
+        changeGridPaneMiddle();
 
-        mainGrid.add(gridPaneMiddle, 1, 1);
-        mainGrid.add(gridPaneLeft, 0, 1);
-        mainGrid.add(gridPaneAbove, 1, 0);
+        gridPaneLeft = new GridPane();
+        gridPaneLeft.setPadding(new Insets(5));
+        changeGridPaneLeft();
+
+        gridPaneAbove = new GridPane();
+        gridPaneAbove.setPadding(new Insets(5));
+        changeGridPaneAbove();
+
+        HBox lowerButtons = makeLowerButtons();
+        HBox boardSizeSettings = makeBoardSettings();
+
+
+        mainGrid.add(boardSizeSettings, 1, 0);
+        mainGrid.add(gridPaneAbove, 1, 1);
+        mainGrid.add(gridPaneMiddle, 1, 2);
+        mainGrid.add(gridPaneLeft, 0, 2);
+        mainGrid.add(lowerButtons, 1, 3);
+
+        errorTextField = new Text("");
+        mainGrid.add(errorTextField, 1, 4);
 
         Scene scene = new Scene(mainGrid, 800, 700);
         stage.setScene(scene);
         stage.show();
     }
 
-    private Pane makeGridPaneLeft(){
-        GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(5));
+    private HBox makeBoardSettings(){
+        HBox currHBox = new HBox(1);
+        Text t1 = new Text("Rows:");
+        Text t2 = new Text("Columns:");
+        TextField textField1 = new TextField();
+        textField1.setPrefWidth(50);
+        TextField textField2 = new TextField();
+        textField2.setPrefWidth(50);
+        Button submitButton = new Button("Submit");
+        submitButton.setOnAction(e->{changeBoardSize(textField1, textField2);});
 
+        currHBox.getChildren().addAll(t1, textField1, t2, textField2, submitButton);
+        return currHBox;
+    }
+
+    private void changeBoardSize(TextField textField1, TextField textField2){
+        try {
+            int numRow = Integer.parseInt(textField1.getText());
+            int numCol = Integer.parseInt(textField2.getText());
+            NUM_ROWS = numRow; // changes global variables to new row value
+            NUM_COLS = numCol;
+            changeGridPaneMiddle();
+            changeGridPaneLeft();
+            changeGridPaneAbove();
+        }
+        catch(Exception e) {
+            errorTextField.setText("Wrong row or column input!");
+        }
+        textField1.setText("");
+        textField2.setText("");
+    }
+
+    private HBox makeLowerButtons(){
+        HBox hboxButtons = new HBox(1); // spacing 1
+        Button solveButton = new Button("Solve");
+        solveButton.setStyle("-fx-background-color: #1fad26");
+        solveButton.setOnAction(e->{solveFromUser();});
+
+        Button resetButton = new Button("Reset");
+        resetButton.setStyle("-fx-background-color: #e52f1a");
+        resetButton.setOnAction(e->{resetBoard();});
+
+        Button checkIfRight = new Button("Check my solution");
+        checkIfRight.setStyle("-fx-background-color: #d1f2c6");
+        checkIfRight.setOnAction(e->{checkUserSolution();});
+
+        Button readFromFileButton = new Button("Solve from file");
+        readFromFileButton.setStyle("-fx-background-color: #8a908a");
+        readFromFileButton.setOnAction(e->{solveFromFile();});
+
+
+        hboxButtons.getChildren().addAll(solveButton, resetButton, checkIfRight, readFromFileButton);
+        return hboxButtons;
+    }
+
+
+    private void changeGridPaneLeft(){
+        gridPaneLeft.getChildren().clear(); // clears the board, (in case there is old board)
         for(int i = 0; i < NUM_ROWS; i++){
+            HBox hbox = new HBox();
             Button plusButton = new Button("+");
             plusButton.setStyle("-fx-background-color: transparent;");
             plusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
             plusButton.setOnAction(e->{
-                addNewNumberBox(plusButton, gridPane,1);
+                addNewNumberBox(plusButton, gridPaneLeft,1);
             });
-            plusButton.setPrefWidth(25);
-            plusButton.setPrefHeight(25);
-            gridPane.add(plusButton, 0, i);
-            gridPane.add(createTextField(), 1, i);
+            Button minusButton = new Button("-");
+            minusButton.setStyle("-fx-background-color: transparent;");
+            minusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
+            minusButton.setOnAction(e->{
+                deleteNewNumberBox(minusButton, gridPaneLeft,1);
+            });
+            minusButton.setPrefWidth(25);
+            minusButton.setPrefHeight(25);
+            hbox.getChildren().addAll(minusButton, plusButton, createTextField());
+            gridPaneLeft.add(hbox, 0, i);
         }
-
-        return gridPane;
     }
 
-    private Pane makeGridPaneAbove(){
-        GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(5));
-
+    private void changeGridPaneAbove(){
+        gridPaneAbove.getChildren().clear(); // clears the board, (in case there is old board)
         for(int i = 0; i < NUM_COLS; i++){
+            VBox vbox = new VBox();
             Button plusButton = new Button("+");
             plusButton.setStyle("-fx-background-color: transparent;");
             plusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
             plusButton.setOnAction(e->{
-                addNewNumberBox(plusButton, gridPane, 2);
+                addNewNumberBox(plusButton, gridPaneAbove, 2);
             });
             plusButton.setPrefWidth(25);
             plusButton.setPrefHeight(25);
-            gridPane.add(plusButton, i, 0);
-            gridPane.add(createTextField(), i, 1);
+
+            Button minusButton = new Button("-");
+            minusButton.setStyle("-fx-background-color: transparent;");
+            minusButton.getProperties().put("TYPE",Integer.toString(i)); // saves the index of the row
+            minusButton.setOnAction(e->{
+                deleteNewNumberBox(minusButton, gridPaneAbove,2);
+            });
+            minusButton.setPrefWidth(25);
+            minusButton.setPrefHeight(25);
+
+            vbox.getChildren().addAll(minusButton, plusButton, createTextField());
+            gridPaneAbove.add(vbox, i, 0);
         }
-        return gridPane;
     }
 
-    private Pane makeGridPaneMiddle(){
-        GridPane gridPane = new GridPane();
-        gridPane.setPadding(new Insets(5));
-
+    private void changeGridPaneMiddle(){
+        gridPaneMiddle.getChildren().clear(); // clears the board, (in case there is old board)
         for(int i = 0; i < NUM_ROWS; i++) {
             for(int j = 0; j < NUM_COLS; j++){
                 Button button = new Button();
@@ -106,14 +189,112 @@ public class Main extends Application{
                 button.setPrefWidth(30);
                 button.setPrefHeight(30);
                 button.getProperties().put("TYPE"," "); // For empty button
-                gridPane.add(button, i, j, 1, 1);
+                gridPaneMiddle.add(button, i, j, 1, 1);
             }
         }
-        return gridPane;
+    }
+
+
+    public void printOutSolution(){
+        errorTextField.setText(""); // resets the error message
+        for(int i = 0; i < NUM_ROWS; i++){
+            for(int j = 0; j < NUM_COLS; j++){
+                Button buttonBox = (Button) getComponent(i,j,gridPaneMiddle);
+                if(board[i][j].equals("#")){
+                    leftButtonClick(buttonBox);
+                }else{
+                    rightButtonClick(buttonBox);
+                }
+            }
+        }
+//        int i = 0; // row number
+//        int j = 0; // column number
+//        for(Node node : gridPaneMiddle.getChildren()){
+//            Button buttonBox = (Button) node;
+//            if(board[i][j].equals("#")){
+//                leftButtonClick(buttonBox);
+//            }else{
+//                rightButtonClick(buttonBox);
+//            }
+//            j++;
+//            if(j == NUM_COLS){
+//                j = 0; // comes back to first column in a row
+//                i++; // goes to next row
+//                // Don't need to check if we are on the max row, cuz gridPaneMiddle have no more children than
+//                // elements in the board list
+//            }
+//        }
+    }
+
+    // Only for Middle, because Left and Above grid use HBox and VBox
+    public static Node getComponent(int row, int column, GridPane gridPane) {
+        for (Node node : gridPane.getChildren()) {
+            if(GridPane.getRowIndex(node) == row &&
+                    GridPane.getColumnIndex(node) == column) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    private void solveFromUser(){
+        // will also do small test while going throw all rows and columns, to check
+        // if given input is fine to use.
+        try {
+            setUpBoard();
+            for(int i = 0; i < NUM_ROWS; i++){
+                ObservableList<Node> childrens = gridPaneLeft.getChildren();
+                HBox hbox = (HBox) childrens.get(i);
+                for(Node hboxNode : hbox.getChildren()){ // skip 0 because it is the '+' button
+                    if(hboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
+                        TextField textF = (TextField) hboxNode;
+                        // I don't check if textField is empty, because if it is empty I want to get exception
+                        // So all textFields must be used by user.
+                        int data = Integer.parseInt(textF.getText());
+                        rows.get(i).add(data);
+                    }
+                }
+            }
+
+            for(int i = 0; i < NUM_COLS; i++){
+                ObservableList<Node> childrens = gridPaneAbove.getChildren();
+                VBox vbox = (VBox) childrens.get(i);
+                for(Node vboxNode : vbox.getChildren()){ // skip 0 because it is the '+' button
+                    if(vboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
+                        TextField textF = (TextField) vboxNode;
+                        int data = Integer.parseInt(textF.getText());
+                        columns.get(i).add(data);
+                    }
+                }
+            }
+            findSolution(0,0); // starts from upper left corner
+            //printing solution in terminal too, for testing
+            for (String[] rowArr : board) {
+                for (String el : rowArr) {
+                    System.out.print("|" + el);
+                }
+                System.out.println("|");
+            }
+            printOutSolution(); // print solution on board
+        } catch(Exception e) {
+            errorTextField.setText("There is no solution or there is a problem with given numbers");
+        }
+    }
+
+    private void resetBoard(){
+        System.out.println("COMING soon");
+    }
+
+    private void checkUserSolution(){
+        System.out.println("COMING soon");
+    }
+
+    private void solveFromFile(){
+        System.out.println("COMING soon");
     }
 
     private TextField createTextField(){
-        TextField textField = new TextField();
+        TextField textField = new TextField("");
         textField.setPrefWidth(30);
         textField.setPrefHeight(30);
         return textField;
@@ -123,21 +304,56 @@ public class Main extends Application{
         int index = Integer.parseInt(String.valueOf(button.getProperties().get("TYPE")));
 
         ObservableList<Node> childrens = gridPane.getChildren();
-        int length = 0;
         if(side == 1){
             for(Node node : childrens){
                 if(gridPane.getRowIndex(node) == index){
-                    length++;
+                    HBox hbox = (HBox) node;
+                    hbox.getChildren().add(createTextField()); // sets new box at the end from right side
                 }
             }
-            gridPane.add(createTextField(),length,index); // sets new box at the end from right side
         }else if(side == 2){
             for(Node node : childrens){
                 if(gridPane.getColumnIndex(node) == index){
-                    length++;
+                    VBox vbox = (VBox) node;
+                    vbox.getChildren().add(createTextField()); // sets new box at the end, under.
                 }
             }
-            gridPane.add(createTextField(),index,length); // sets new box at the end from under
+        }
+    }
+
+    private void deleteNewNumberBox(Button button, GridPane gridPane, int side) { // side: 1 left, 2 above
+        int index = Integer.parseInt(String.valueOf(button.getProperties().get("TYPE")));
+
+        ObservableList<Node> childrens = gridPane.getChildren();
+        if(side == 1){
+            for(Node node : childrens){ // node is HBox
+                if(gridPane.getRowIndex(node) == index){
+                    HBox hbox = (HBox) node;
+                    ObservableList<Node> childrensHbox = hbox.getChildren();
+                    // must have more than 3 elements (+ - empty box and at least something else)
+                    if(childrensHbox.size() > 3){
+                        Node lastNode = null; // will have value of the last node in the hbox (right side)
+                        for(Node buttonNode : childrensHbox){
+                            lastNode = buttonNode;
+                        }
+                        hbox.getChildren().remove(lastNode);
+                    }
+                }
+            }
+        }else if(side == 2){
+            for(Node node : childrens){
+                if(gridPane.getColumnIndex(node) == index){
+                    VBox vbox = (VBox) node;
+                    ObservableList<Node> childrensVbox = vbox.getChildren();
+                    if(childrensVbox.size() > 3){
+                        Node lastNode = null; // will have value of the last node in the vbox (under)
+                        for(Node buttonNode : childrensVbox){
+                            lastNode = buttonNode;
+                        }
+                        vbox.getChildren().remove(lastNode);
+                    }
+                }
+            }
         }
     }
 
@@ -178,6 +394,15 @@ public class Main extends Application{
         for (String[] strings : board) {
             Arrays.fill(strings, " ");
         }
+        // clear up arrayLists in case we used them before
+        rows.clear();
+        columns.clear();
+        for(int i = 0; i < NUM_ROWS; i++){
+            rows.add(new ArrayList<Integer>());
+        }
+        for(int i = 0; i < NUM_COLS; i++){
+            columns.add(new ArrayList<Integer>());
+        }
     }
 
     private static boolean checkRow(int i, int j){
@@ -188,10 +413,10 @@ public class Main extends Application{
             if(board[i][iter].equals("#")){
                 newBlock = true;
                 countedNumber++;
-                if(blackBlockNum >= rows[i].length){ // if to many blocks of black
+                if(blackBlockNum >= rows.get(i).size()){ // if to many blocks of black
                     return false;
                 }
-                if(countedNumber > rows[i][blackBlockNum]) { // not enough black in the block
+                if(countedNumber > rows.get(i).get(blackBlockNum)) { // not enough black in the block
                     return false;
                 }
             }else{
@@ -205,8 +430,6 @@ public class Main extends Application{
         return true;
     }
 
-
-
     private static boolean checkColumn(int i, int j){
         int blackBlockNum = 0; // number for the black block that I can look up in columns array
         int countedNumber = 0;
@@ -215,10 +438,10 @@ public class Main extends Application{
             if(board[iter][j].equals("#")){
                 newBlock = true;
                 countedNumber++;
-                if(blackBlockNum >= columns[j].length){
+                if(blackBlockNum >= columns.get(j).size()){
                     return false;
                 }
-                if(countedNumber > columns[j][blackBlockNum]){ // not enough black in the block
+                if(countedNumber > columns.get(j).get(blackBlockNum)){ // not enough black in the block
                     return false;
                 }
             }else{
@@ -237,10 +460,10 @@ public class Main extends Application{
         // we have set black color in the right position
         if(!checkRow(i,j)){return false;}
         if(!checkColumn(i,j)){return false;}
-        
+
         if(j == board[i].length-1){
             int numberOfBlacks = 0; // number of black we need
-            for(int num : rows[i]){
+            for(int num : rows.get(i)){
                 numberOfBlacks = numberOfBlacks + num;
             }
             int blackOnRowCount = 0; // number of black we have
@@ -256,7 +479,6 @@ public class Main extends Application{
         }
         return true;
     }
-
 
     private static boolean findSolution(int i, int j){
         if(i == board.length) return true; // at the last row
@@ -285,17 +507,39 @@ public class Main extends Application{
     public static void main(String[] args) {
         // This time I am trying recursion solution with backtracking
         // (It will be slower than old OOP version, but it will solve almost any nonogram by brute force)
-        NUM_ROWS = 10;
-        NUM_COLS = 10;
+        NUM_ROWS = 5; // start
+        NUM_COLS = 5; // start
+//        setUpBoard();
+//
+//        //private static final Integer[][] rows = {{3},{3},{2},{1,2},{2}};
+//        for(int i = 0; i < NUM_ROWS; i++){
+//            rows.add(new ArrayList<Integer>());
+//        }
+//        rows.get(0).add(3);
+//        rows.get(1).add(3);
+//        rows.get(2).add(2);
+//        rows.get(3).add(1);
+//        rows.get(3).add(2);
+//        rows.get(4).add(2);
+//        //private static final Integer[][] columns = {{2,1},{2},{2},{3},{3}};
 
-        setUpBoard();
-        findSolution(0,0); // starts from upper left corner
-        for (String[] rowArr : board) {
-            for (String el : rowArr) {
-                System.out.print("|" + el);
-            }
-            System.out.println("|");
-        }
+//        for(int i = 0; i < NUM_COLS; i++){
+//            columns.add(new ArrayList<Integer>());
+//        }
+//        columns.get(0).add(2);
+//        columns.get(0).add(1);
+//        columns.get(1).add(2);
+//        columns.get(2).add(2);
+//        columns.get(3).add(3);
+//        columns.get(4).add(3);
+
+//        findSolution(0,0); // starts from upper left corner
+//        for (String[] rowArr : board) {
+//            for (String el : rowArr) {
+//                System.out.print("|" + el);
+//            }
+//            System.out.println("|");
+//        }
 
         launch();
 
