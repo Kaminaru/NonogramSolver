@@ -12,11 +12,15 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 public class Main extends Application{
     private static int NUM_ROWS =  0;
@@ -50,7 +54,7 @@ public class Main extends Application{
         gridPaneAbove.setPadding(new Insets(5));
         changeGridPaneAbove();
 
-        HBox lowerButtons = makeLowerButtons();
+        HBox lowerButtons = makeLowerButtons(stage);
         HBox boardSizeSettings = makeBoardSettings();
 
 
@@ -89,9 +93,7 @@ public class Main extends Application{
             int numCol = Integer.parseInt(textField2.getText());
             NUM_ROWS = numRow; // changes global variables to new row value
             NUM_COLS = numCol;
-            changeGridPaneMiddle();
-            changeGridPaneLeft();
-            changeGridPaneAbove();
+            resetBoard();
         }
         catch(Exception e) {
             errorTextField.setText("Wrong row or column input!");
@@ -100,7 +102,7 @@ public class Main extends Application{
         textField2.setText("");
     }
 
-    private HBox makeLowerButtons(){
+    private HBox makeLowerButtons(Stage stage){
         HBox hboxButtons = new HBox(1); // spacing 1
         Button solveButton = new Button("Solve");
         solveButton.setStyle("-fx-background-color: #1fad26");
@@ -114,9 +116,9 @@ public class Main extends Application{
         checkIfRight.setStyle("-fx-background-color: #d1f2c6");
         checkIfRight.setOnAction(e->{checkUserSolution();});
 
-        Button readFromFileButton = new Button("Solve from file");
+        Button readFromFileButton = new Button("Import from file");
         readFromFileButton.setStyle("-fx-background-color: #8a908a");
-        readFromFileButton.setOnAction(e->{solveFromFile();});
+        readFromFileButton.setOnAction(e->{importFromFile(stage);});
 
 
         hboxButtons.getChildren().addAll(solveButton, resetButton, checkIfRight, readFromFileButton);
@@ -189,52 +191,31 @@ public class Main extends Application{
                 button.setPrefWidth(30);
                 button.setPrefHeight(30);
                 button.getProperties().put("TYPE"," "); // For empty button
-                gridPaneMiddle.add(button, i, j, 1, 1);
+                gridPaneMiddle.add(button, j, i, 1, 1);
             }
         }
     }
 
 
     public void printOutSolution(){
-        errorTextField.setText(""); // resets the error message
-        for(int i = 0; i < NUM_ROWS; i++){
-            for(int j = 0; j < NUM_COLS; j++){
-                Button buttonBox = (Button) getComponent(i,j,gridPaneMiddle);
-                if(board[i][j].equals("#")){
-                    leftButtonClick(buttonBox);
-                }else{
-                    rightButtonClick(buttonBox);
-                }
+        changeGridPaneMiddle(); // reset mid pane
+        int i = 0; // row number
+        int j = 0; // column number
+        for(Node node : gridPaneMiddle.getChildren()){
+            Button buttonBox = (Button) node;
+            if(board[i][j].equals("#")){
+                leftButtonClick(buttonBox);
+            }else{
+                rightButtonClick(buttonBox);
+            }
+            j++;
+            if(j == NUM_ROWS){ // at the edge need to go to the next row
+                j = 0; // comes back to first column
+                i++; // goes to next row
+                // Don't need to check if we are on the max row, cuz gridPaneMiddle have no more children than
+                // elements in the board list
             }
         }
-//        int i = 0; // row number
-//        int j = 0; // column number
-//        for(Node node : gridPaneMiddle.getChildren()){
-//            Button buttonBox = (Button) node;
-//            if(board[i][j].equals("#")){
-//                leftButtonClick(buttonBox);
-//            }else{
-//                rightButtonClick(buttonBox);
-//            }
-//            j++;
-//            if(j == NUM_COLS){
-//                j = 0; // comes back to first column in a row
-//                i++; // goes to next row
-//                // Don't need to check if we are on the max row, cuz gridPaneMiddle have no more children than
-//                // elements in the board list
-//            }
-//        }
-    }
-
-    // Only for Middle, because Left and Above grid use HBox and VBox
-    public static Node getComponent(int row, int column, GridPane gridPane) {
-        for (Node node : gridPane.getChildren()) {
-            if(GridPane.getRowIndex(node) == row &&
-                    GridPane.getColumnIndex(node) == column) {
-                return node;
-            }
-        }
-        return null;
     }
 
     private void solveFromUser(){
@@ -282,15 +263,114 @@ public class Main extends Application{
     }
 
     private void resetBoard(){
-        System.out.println("COMING soon");
+        changeGridPaneMiddle();
+        changeGridPaneLeft();
+        changeGridPaneAbove();
     }
 
     private void checkUserSolution(){
-        System.out.println("COMING soon");
+        // Getting own solution
+        try{
+            findSolution(0,0);
+        }catch(Exception e){
+            errorTextField.setText("Something went wrong. Please make sure that all numbers are present");
+        }
+        int i = 0; // row number
+        int j = 0; // column number
+        for(Node node : gridPaneMiddle.getChildren()){
+            Button buttonBox = (Button) node;
+            // check if board[i][j] is the same as button type (#,X)
+            // However I also need to consider that user won't use X on all places
+            // so X on grid can be both X or empty space on board
+            if(board[i][j].equals("#")){
+                // button on grid must also have # else send error
+                if(!buttonBox.getProperties().get("TYPE").equals("#")){
+                    errorTextField.setText("Wrong user solution");
+                    return;
+                }
+            }
+            j++;
+            if(j == NUM_ROWS){ // at the edge need to go to the next row
+                j = 0; // comes back to first column
+                i++; // goes to next row
+            }
+        }
+        errorTextField.setText("User solution is right!");
     }
 
-    private void solveFromFile(){
-        System.out.println("COMING soon");
+    private void importFromFile(Stage stage){
+        // Decided that it won't solve it immediately, but just add numbers from file
+        // So user can try to solve it. Or else can just use "Solve" button.
+        try{
+            File file = new FileChooser().showOpenDialog(stage);
+            Scanner scanner = new Scanner(file);
+
+            String[] firstLine = scanner.nextLine().split(" ");
+            int numRow = Integer.parseInt(firstLine[0]);
+            int numCol = Integer.parseInt(firstLine[1]);
+            NUM_ROWS = numRow; // changes global variables to new row value
+            NUM_COLS = numCol; // changes global variables to new column value
+            resetBoard();
+
+            // file will work with both rows numbers first or column numbers first.
+            // So file must look something like that:
+            // 3 3                ~Numbers of rows and columns~
+            // row                ~Tells what kind of numbers will go next, can be both column or row
+            // 1                  ~Number row 0~
+            // 0                  ~Number row 1~
+            // 1 1                ~Number row 2~
+            // column
+            // 0
+            // 0
+            // 2
+            int row_or_column = 0; // 1 for row, 2 for column
+            int rowColNumber = 0; // index of needed VBox or HBox in left or above GridPane
+            while(scanner.hasNextLine()){
+                String[] numbers = scanner.nextLine().split(" ");
+                if(numbers[0].equals("row")){
+                    row_or_column = 1;
+                    rowColNumber = 0; // resets it to 0
+                }else if(numbers[0].equals("column")){
+                    row_or_column = 2;
+                    rowColNumber = 0; // resets it to 0
+                }else if(row_or_column != 0){ // we have numbers
+                    if(row_or_column == 1){
+                        HBox rowHbox = (HBox) gridPaneLeft.getChildren().get(rowColNumber);
+                        // adds needed number of textFields for numbers (1 because there is one textfield from the start)
+                        for(int k = 1; k < numbers.length; k++){
+                            rowHbox.getChildren().add(createTextField());
+                        }
+
+                        // put all numbers in needed places
+                        for(int k = 0; k < numbers.length; k++){
+                            TextField textField = (TextField) rowHbox.getChildren().get(k+2);
+                            textField.setText(numbers[k]);
+                        }
+                        rowColNumber++;
+                    }else if(row_or_column == 2){
+                        VBox columnVbox = (VBox) gridPaneAbove.getChildren().get(rowColNumber);
+                        // adds needed number of textFields for numbers (1 because there is one textfield from the start)
+                        System.out.println(numbers.length);
+                        for(int k = 1; k < numbers.length; k++){
+                            columnVbox.getChildren().add(createTextField());
+                        }
+
+                        // put all numbers in needed places
+                        for(int k = 0; k < numbers.length; k++){
+                            TextField textField = (TextField) columnVbox.getChildren().get(k+2);
+                            textField.setText(numbers[k]);
+                        }
+                        rowColNumber++;
+                    }
+                }else{
+                    errorTextField.setText("Wrong file type!");
+                }
+            }
+
+
+        }catch(Exception e){
+            errorTextField.setText("Something went wrong while reading a file!");
+        }
     }
 
     private TextField createTextField(){
@@ -306,14 +386,14 @@ public class Main extends Application{
         ObservableList<Node> childrens = gridPane.getChildren();
         if(side == 1){
             for(Node node : childrens){
-                if(gridPane.getRowIndex(node) == index){
+                if(GridPane.getRowIndex(node) == index){
                     HBox hbox = (HBox) node;
                     hbox.getChildren().add(createTextField()); // sets new box at the end from right side
                 }
             }
         }else if(side == 2){
             for(Node node : childrens){
-                if(gridPane.getColumnIndex(node) == index){
+                if(GridPane.getColumnIndex(node) == index){
                     VBox vbox = (VBox) node;
                     vbox.getChildren().add(createTextField()); // sets new box at the end, under.
                 }
@@ -327,7 +407,7 @@ public class Main extends Application{
         ObservableList<Node> childrens = gridPane.getChildren();
         if(side == 1){
             for(Node node : childrens){ // node is HBox
-                if(gridPane.getRowIndex(node) == index){
+                if(GridPane.getRowIndex(node) == index){
                     HBox hbox = (HBox) node;
                     ObservableList<Node> childrensHbox = hbox.getChildren();
                     // must have more than 3 elements (+ - empty box and at least something else)
@@ -342,7 +422,7 @@ public class Main extends Application{
             }
         }else if(side == 2){
             for(Node node : childrens){
-                if(gridPane.getColumnIndex(node) == index){
+                if(GridPane.getColumnIndex(node) == index){
                     VBox vbox = (VBox) node;
                     ObservableList<Node> childrensVbox = vbox.getChildren();
                     if(childrensVbox.size() > 3){
@@ -507,43 +587,12 @@ public class Main extends Application{
     public static void main(String[] args) {
         // This time I am trying recursion solution with backtracking
         // (It will be slower than old OOP version, but it will solve almost any nonogram by brute force)
-        NUM_ROWS = 5; // start
-        NUM_COLS = 5; // start
-//        setUpBoard();
-//
-//        //private static final Integer[][] rows = {{3},{3},{2},{1,2},{2}};
-//        for(int i = 0; i < NUM_ROWS; i++){
-//            rows.add(new ArrayList<Integer>());
-//        }
-//        rows.get(0).add(3);
-//        rows.get(1).add(3);
-//        rows.get(2).add(2);
-//        rows.get(3).add(1);
-//        rows.get(3).add(2);
-//        rows.get(4).add(2);
-//        //private static final Integer[][] columns = {{2,1},{2},{2},{3},{3}};
 
-//        for(int i = 0; i < NUM_COLS; i++){
-//            columns.add(new ArrayList<Integer>());
-//        }
-//        columns.get(0).add(2);
-//        columns.get(0).add(1);
-//        columns.get(1).add(2);
-//        columns.get(2).add(2);
-//        columns.get(3).add(3);
-//        columns.get(4).add(3);
-
-//        findSolution(0,0); // starts from upper left corner
-//        for (String[] rowArr : board) {
-//            for (String el : rowArr) {
-//                System.out.print("|" + el);
-//            }
-//            System.out.println("|");
-//        }
+        // start values
+        NUM_ROWS = 5;
+        NUM_COLS = 5;
 
         launch();
-
-
 
         System.exit(0);
     }
