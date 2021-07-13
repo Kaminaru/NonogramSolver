@@ -8,3 +8,4 @@ Plans for future versions:
 * [ ] Read txt file
 * [X] Make sure that user input is at least fine
 * [ ] Threads (showing board while finding solution)
+* [ ] Implement openCV that will read nonogram numbers from video/photo, so I don't need to write numbers myself.
