@@ -119,8 +119,6 @@ public class Main extends Application{
         Button readFromFileButton = new Button("Import from file");
         readFromFileButton.setStyle("-fx-background-color: #8a908a");
         readFromFileButton.setOnAction(e->{importFromFile(stage);});
-
-
         hboxButtons.getChildren().addAll(solveButton, resetButton, checkIfRight, readFromFileButton);
         return hboxButtons;
     }
