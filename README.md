@@ -8,3 +8,15 @@ Plans for future versions:
 * [X] Read from txt file
 * [ ] Threads (update board while finding solution (needed for 15x15 or more))
 * [ ] Implement openCV that will read nonogram numbers from video/photo, so I don't need to write numbers myself.
+
+
+
+
+# Current result:
+User able to change size of the board:
+
+<img src="sizeChange.gif" width="520" height="400">
+
+Import numbers from the file, and solve it by yourself or by pressing "Solve":
+
+<img src="importFromFileAndSolve.gif" width="520" height="400">
