@@ -20,3 +20,7 @@ User able to change size of the board:
 Import numbers from the file, and solve it by yourself or by pressing "Solve":
 
 <img src="importFromFileAndSolve.gif" width="520" height="400">
+
+User can reset board and also try to solve nonogram himself and check if his solution is right (both before and after importing from the file):
+
+<img src="theRest.gif" width="520" height="400">

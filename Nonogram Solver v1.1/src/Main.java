@@ -216,36 +216,41 @@ public class Main extends Application{
         }
     }
 
+    private void numbersFromLeftAboveToLists(){
+        // reads gridPaneLeft and gridPaneAbove and saves values in the rows and coluns lists
+        for(int i = 0; i < NUM_ROWS; i++){
+            ObservableList<Node> childrens = gridPaneLeft.getChildren();
+            HBox hbox = (HBox) childrens.get(i);
+            for(Node hboxNode : hbox.getChildren()){ // skip 0 because it is the '+' button
+                if(hboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
+                    TextField textF = (TextField) hboxNode;
+                    // I don't check if textField is empty, because if it is empty I want to get exception
+                    // So all textFields must be used by user.
+                    int data = Integer.parseInt(textF.getText());
+                    rows.get(i).add(data);
+                }
+            }
+        }
+
+        for(int i = 0; i < NUM_COLS; i++){
+            ObservableList<Node> childrens = gridPaneAbove.getChildren();
+            VBox vbox = (VBox) childrens.get(i);
+            for(Node vboxNode : vbox.getChildren()){ // skip 0 because it is the '+' button
+                if(vboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
+                    TextField textF = (TextField) vboxNode;
+                    int data = Integer.parseInt(textF.getText());
+                    columns.get(i).add(data);
+                }
+            }
+        }
+    }
+
     private void solveFromUser(){
         // will also do small test while going throw all rows and columns, to check
         // if given input is fine to use.
         try {
             setUpBoard();
-            for(int i = 0; i < NUM_ROWS; i++){
-                ObservableList<Node> childrens = gridPaneLeft.getChildren();
-                HBox hbox = (HBox) childrens.get(i);
-                for(Node hboxNode : hbox.getChildren()){ // skip 0 because it is the '+' button
-                    if(hboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
-                        TextField textF = (TextField) hboxNode;
-                        // I don't check if textField is empty, because if it is empty I want to get exception
-                        // So all textFields must be used by user.
-                        int data = Integer.parseInt(textF.getText());
-                        rows.get(i).add(data);
-                    }
-                }
-            }
-
-            for(int i = 0; i < NUM_COLS; i++){
-                ObservableList<Node> childrens = gridPaneAbove.getChildren();
-                VBox vbox = (VBox) childrens.get(i);
-                for(Node vboxNode : vbox.getChildren()){ // skip 0 because it is the '+' button
-                    if(vboxNode.getClass() == TextField.class){ // !!!!!!!! important to remember this comparison
-                        TextField textF = (TextField) vboxNode;
-                        int data = Integer.parseInt(textF.getText());
-                        columns.get(i).add(data);
-                    }
-                }
-            }
+            numbersFromLeftAboveToLists();
             findSolution(0,0); // starts from upper left corner
             //printing solution in terminal too, for testing
             for (String[] rowArr : board) {
@@ -261,12 +266,17 @@ public class Main extends Application{
     }
 
     private void resetBoard(){
+        errorTextField.setText(" ");
         changeGridPaneMiddle();
         changeGridPaneLeft();
         changeGridPaneAbove();
     }
 
     private void checkUserSolution(){
+        // copy numbers from above and left pane to rows and columns list
+        setUpBoard();
+        numbersFromLeftAboveToLists();
+
         // Getting own solution
         try{
             findSolution(0,0);
@@ -283,6 +293,11 @@ public class Main extends Application{
             if(board[i][j].equals("#")){
                 // button on grid must also have # else send error
                 if(!buttonBox.getProperties().get("TYPE").equals("#")){
+                    errorTextField.setText("Wrong user solution");
+                    return;
+                }
+            }else{ // if something X or empty in solution, and # in user solution
+                if(buttonBox.getProperties().get("TYPE").equals("#")){
                     errorTextField.setText("Wrong user solution");
                     return;
                 }
